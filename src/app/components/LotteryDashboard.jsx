@@ -6,73 +6,129 @@ import WalletUtilService from '../lib/wallet-util-service';
 import { useLotteryQuery } from '../fn/useLotteryQuery';
 
 const LotteryResultsTable = ({ lotteryData }) => {
-    const [previousRoundData, setPreviousRoundData] = useState(null);
+    const [roundHistory, setRoundHistory] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Determine which round to show data for
-    const displayRound = lotteryData.isDrawn ? lotteryData.currentRound : lotteryData.currentRound - 1;
-    const isShowingPreviousRound = !lotteryData.isDrawn && lotteryData.isActive;
+    // Determine what to show based on lottery state
+    const isActiveLottery = lotteryData.isActive && !lotteryData.isDrawn;
+    const isDrawnLottery = lotteryData.isDrawn;
+    const noActiveLottery = !lotteryData.isActive && !lotteryData.isDrawn;
 
-    // Fetch previous round data if needed
+    console.log('Lottery state:', {
+        currentRound: lotteryData.currentRound,
+        isActive: lotteryData.isActive,
+        isDrawn: lotteryData.isDrawn,
+        isActiveLottery,
+        isDrawnLottery,
+        noActiveLottery
+    });
+
+    // Fetch round history when needed
     useEffect(() => {
-        if (isShowingPreviousRound && displayRound > 0) {
-            fetchPreviousRoundData();
+        if (lotteryData.currentRound > 0) {
+            fetchRoundHistory();
         }
-    }, [displayRound, isShowingPreviousRound]);
+    }, [lotteryData.currentRound]);
 
-    const fetchPreviousRoundData = async () => {
+    const fetchRoundHistory = async () => {
         setLoading(true);
         try {
             const baseUrl = 'https://testnet.xian.org/abci_query';
+            const rounds = [];
 
-            // Fetch pool data for previous round
-            const poolKey = `"/get/con_x00011.pool:${displayRound}"`;
-            const poolRes = await fetch(`${baseUrl}?path=${encodeURIComponent(poolKey)}&prove=false`);
-            const poolJson = await poolRes.json();
+            // Always show all completed rounds + current round if drawn
+            let roundsToFetch = [];
 
-            // Fetch ticket count for previous round
-            const ticketCountKey = `"/get/con_x00011.ticket_count:${displayRound}"`;
-            const ticketCountRes = await fetch(`${baseUrl}?path=${encodeURIComponent(ticketCountKey)}&prove=false`);
-            const ticketCountJson = await ticketCountRes.json();
-
-            // Fetch winner for previous round
-            const winnerKey = `"/get/con_x00011.winners:${displayRound}"`;
-            const winnerRes = await fetch(`${baseUrl}?path=${encodeURIComponent(winnerKey)}&prove=false`);
-            const winnerJson = await winnerRes.json();
-
-            let pool = 0;
-            let ticketCount = 0;
-            let winner = '';
-
-            try {
-                if (poolJson.result?.response?.value) {
-                    pool = parseFloat(window.atob(poolJson.result.response.value)) || 0;
+            if (lotteryData.currentRound > 1) {
+                if (isDrawnLottery) {
+                    // If current round is drawn, show all rounds including current
+                    roundsToFetch = Array.from({ length: lotteryData.currentRound }, (_, i) => i + 1);
+                } else {
+                    // Show all completed rounds (excluding current active round)
+                    roundsToFetch = Array.from({ length: lotteryData.currentRound - 1 }, (_, i) => i + 1);
                 }
-                if (ticketCountJson.result?.response?.value) {
-                    ticketCount = parseInt(window.atob(ticketCountJson.result.response.value)) || 0;
-                }
-                if (winnerJson.result?.response?.value) {
-                    winner = window.atob(winnerJson.result.response.value) || '';
-                }
-            } catch (e) {
-                console.error('Error parsing previous round data:', e);
+            } else if (lotteryData.currentRound === 1 && isDrawnLottery) {
+                // If it's round 1 and drawn, show it
+                roundsToFetch = [1];
             }
 
-            setPreviousRoundData({ pool, ticketCount, winner });
+            console.log('Fetching rounds:', roundsToFetch, 'Current round:', lotteryData.currentRound, 'Is active:', isActiveLottery, 'Is drawn:', isDrawnLottery);
+
+            for (const round of roundsToFetch) {
+                if (round <= 0) continue;
+
+                try {
+                    // Fetch pool data for this round
+                    const poolKey = `"/get/con_x00011.pool:${round}"`;
+                    const poolRes = await fetch(`${baseUrl}?path=${encodeURIComponent(poolKey)}&prove=false`);
+                    const poolJson = await poolRes.json();
+
+                    // Fetch ticket count for this round
+                    const ticketCountKey = `"/get/con_x00011.ticket_count:${round}"`;
+                    const ticketCountRes = await fetch(`${baseUrl}?path=${encodeURIComponent(ticketCountKey)}&prove=false`);
+                    const ticketCountJson = await ticketCountRes.json();
+
+                    // Fetch winner for this round
+                    const winnerKey = `"/get/con_x00011.winners:${round}"`;
+                    const winnerRes = await fetch(`${baseUrl}?path=${encodeURIComponent(winnerKey)}&prove=false`);
+                    const winnerJson = await winnerRes.json();
+
+                    let pool = 0;
+                    let ticketCount = 0;
+                    let winner = '';
+
+                    try {
+                        if (poolJson.result?.response?.value) {
+                            pool = parseFloat(window.atob(poolJson.result.response.value)) || 0;
+                        }
+                        if (ticketCountJson.result?.response?.value) {
+                            ticketCount = parseInt(window.atob(ticketCountJson.result.response.value)) || 0;
+                        }
+                        if (winnerJson.result?.response?.value) {
+                            winner = window.atob(winnerJson.result.response.value) || '';
+                        }
+                    } catch (e) {
+                        console.error(`Error parsing data for round ${round}:`, e);
+                    }
+
+                    console.log(`Round ${round} data:`, { round, pool, ticketCount, winner });
+                    rounds.push({ round, pool, ticketCount, winner });
+                } catch (e) {
+                    console.error(`Error fetching data for round ${round}:`, e);
+                }
+            }
+
+            // Sort rounds in descending order (newest first) - optional
+            rounds.sort((a, b) => b.round - a.round);
+
+            console.log('Fetched round history:', rounds);
+            setRoundHistory(rounds);
         } catch (e) {
-            console.error('Error fetching previous round data:', e);
+            console.error('Error fetching round history:', e);
         } finally {
             setLoading(false);
         }
     };
-
-    // Show results if there's a drawn round OR if there's an active lottery with previous round data
+    // Show results if there's any lottery data
     if (lotteryData.currentRound === 0) {
         return null;
     }
 
-    // If current round is active and not drawn, show previous round results
-    const showResults = lotteryData.isDrawn || (lotteryData.isActive && lotteryData.currentRound > 1);
+    // Determine what to show - always show results if there are rounds
+    let showResults = lotteryData.currentRound > 0;
+    let title = '';
+
+    if (isActiveLottery && lotteryData.currentRound > 1) {
+        title = 'Last Round Results';
+    } else if (isDrawnLottery) {
+        title = 'Current Round Results';
+    } else if (lotteryData.currentRound > 1) {
+        title = 'Lottery History';
+    } else {
+        title = 'Lottery Results';
+    }
+
+    console.log('Final decision:', { showResults, title, currentRound: lotteryData.currentRound });
 
     if (!showResults) {
         return null;
@@ -81,8 +137,8 @@ const LotteryResultsTable = ({ lotteryData }) => {
     return (
         <div className="card mb-4">
             <h3 className="text-center mb-4" style={{ fontSize: '1.25rem', fontWeight: '600' }}>
-                📊 {lotteryData.isDrawn ? 'Current Round Results' : 'Last Round Results'}
-                {isShowingPreviousRound && loading && (
+                📊 {title}
+                {loading && (
                     <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginLeft: 'var(--space-sm)' }}>
                         (Loading...)
                     </span>
@@ -131,69 +187,84 @@ const LotteryResultsTable = ({ lotteryData }) => {
                         </tr>
                     </thead>
                     <tbody style={{ background: 'var(--bg-card)' }}>
-                        <tr style={{
-                            borderBottom: '1px solid var(--border-primary)',
-                            transition: 'var(--transition-fast)'
-                        }}>
-                            <td style={{
-                                padding: 'var(--space-lg) var(--space-xl)',
-                                borderBottom: '1px solid var(--border-primary)'
-                            }}>
-                                <span style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    padding: 'var(--space-sm) var(--space-md)',
-                                    borderRadius: 'var(--radius-sm)',
-                                    fontSize: '0.875rem',
-                                    fontWeight: '500',
-                                    background: 'var(--accent-primary)',
-                                    color: 'var(--text-primary)'
+                        {console.log('Rendering table with roundHistory:', roundHistory, 'loading:', loading)}
+                        {roundHistory.length === 0 && !loading ? (
+                            <tr>
+                                <td colSpan="4" style={{
+                                    padding: 'var(--space-lg) var(--space-xl)',
+                                    textAlign: 'center',
+                                    color: 'var(--text-secondary)'
                                 }}>
-                                    #{lotteryData.isDrawn ? lotteryData.currentRound : lotteryData.currentRound - 1}
-                                </span>
-                            </td>
-                            <td style={{
-                                padding: 'var(--space-lg) var(--space-xl)',
-                                borderBottom: '1px solid var(--border-primary)'
-                            }}>
-                                <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
-                                    {isShowingPreviousRound && previousRoundData ? previousRoundData.ticketCount : lotteryData.ticketCount}
-                                </span>
-                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginLeft: 'var(--space-xs)' }}>
-                                    tickets
-                                </span>
-                            </td>
-                            <td style={{
-                                padding: 'var(--space-lg) var(--space-xl)',
-                                borderBottom: '1px solid var(--border-primary)'
-                            }}>
-                                <span style={{ fontWeight: '600', color: 'var(--accent-success)' }}>
-                                    {isShowingPreviousRound && previousRoundData ? previousRoundData.pool.toFixed(2) : lotteryData.pool.toFixed(2)}
-                                </span>
-                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginLeft: 'var(--space-xs)' }}>
-                                    XIAN
-                                </span>
-                            </td>
-                            <td style={{
-                                padding: 'var(--space-lg) var(--space-xl)',
-                                borderBottom: '1px solid var(--border-primary)'
-                            }}>
-                                <span style={{
-                                    fontFamily: 'monospace',
-                                    fontSize: '0.875rem',
-                                    background: 'var(--bg-tertiary)',
-                                    padding: 'var(--space-xs) var(--space-sm)',
-                                    borderRadius: 'var(--radius-sm)',
-                                    color: 'var(--text-primary)',
-                                    border: '1px solid var(--border-primary)'
+                                    No completed rounds found
+                                </td>
+                            </tr>
+                        ) : (
+                            roundHistory.map((roundData, index) => (
+                                <tr key={roundData.round} style={{
+                                    borderBottom: '1px solid var(--border-primary)',
+                                    transition: 'var(--transition-fast)'
                                 }}>
-                                    {(isShowingPreviousRound && previousRoundData ? previousRoundData.winner : lotteryData.winner) ?
-                                        `${(isShowingPreviousRound && previousRoundData ? previousRoundData.winner : lotteryData.winner).slice(0, 8)}...${(isShowingPreviousRound && previousRoundData ? previousRoundData.winner : lotteryData.winner).slice(-6)}` :
-                                        'N/A'
-                                    }
-                                </span>
-                            </td>
-                        </tr>
+                                    <td style={{
+                                        padding: 'var(--space-lg) var(--space-xl)',
+                                        borderBottom: '1px solid var(--border-primary)'
+                                    }}>
+                                        <span style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            padding: 'var(--space-sm) var(--space-md)',
+                                            borderRadius: 'var(--radius-sm)',
+                                            fontSize: '0.875rem',
+                                            fontWeight: '500',
+                                            background: 'var(--accent-primary)',
+                                            color: 'var(--text-primary)'
+                                        }}>
+                                            #{roundData.round}
+                                        </span>
+                                    </td>
+                                    <td style={{
+                                        padding: 'var(--space-lg) var(--space-xl)',
+                                        borderBottom: '1px solid var(--border-primary)'
+                                    }}>
+                                        <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                                            {roundData.ticketCount}
+                                        </span>
+                                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginLeft: 'var(--space-xs)' }}>
+                                            tickets
+                                        </span>
+                                    </td>
+                                    <td style={{
+                                        padding: 'var(--space-lg) var(--space-xl)',
+                                        borderBottom: '1px solid var(--border-primary)'
+                                    }}>
+                                        <span style={{ fontWeight: '600', color: 'var(--accent-success)' }}>
+                                            {roundData.pool.toFixed(2)}
+                                        </span>
+                                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginLeft: 'var(--space-xs)' }}>
+                                            XIAN
+                                        </span>
+                                    </td>
+                                    <td style={{
+                                        padding: 'var(--space-lg) var(--space-xl)',
+                                        borderBottom: '1px solid var(--border-primary)'
+                                    }}>
+                                        <span style={{
+                                            fontFamily: 'monospace',
+                                            fontSize: '0.875rem',
+                                            background: 'var(--bg-tertiary)',
+                                            padding: 'var(--space-xs) var(--space-sm)',
+                                            borderRadius: 'var(--radius-sm)',
+                                            color: 'var(--text-primary)',
+                                            border: '1px solid var(--border-primary)'
+                                        }}>
+                                            {roundData.winner ?
+                                                `${roundData.winner.slice(0, 8)}...${roundData.winner.slice(-6)}` :
+                                                'N/A'
+                                            }
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
