@@ -6,7 +6,7 @@ import WalletUtilService from '../lib/wallet-util-service';
 import { useLotteryQuery } from '../fn/useLotteryQuery';
 
 // Component to fetch and display user's tickets for current round
-const MyTicketsInfo = ({ currentRound, walletAddress }) => {
+const MyTicketsInfo = ({ currentRound, walletAddress, isDrawn }) => {
     const [ticketCount, setTicketCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -70,15 +70,17 @@ const MyTicketsInfo = ({ currentRound, walletAddress }) => {
     }
 
     if (ticketCount > 0) {
+        const roundText = isDrawn ? `round #${currentRound}` : `round #${currentRound}`;
         return (
             <div>
                 <p className="text-secondary mb-2">
-                    You have <span className="accent-text font-bold text-xl">{ticketCount}</span> ticket{ticketCount === 1 ? '' : 's'} in round #{currentRound}
+                    You had <span className="accent-text font-bold text-xl">{ticketCount}</span> ticket{ticketCount === 1 ? '' : 's'} in {roundText}
                 </p>
             </div>
         );
     } else {
-        return <p className="text-secondary">You don&apos;t have any tickets in this round</p>;
+        const roundText = isDrawn ? `round #${currentRound}` : `round #${currentRound}`;
+        return <p className="text-secondary">You didn&apos;t have any tickets in {roundText}</p>;
     }
 };
 
@@ -254,15 +256,27 @@ const LotteryDashboard = ({
                 throw new Error(`Draw winner failed: ${res.errors}`);
             }
 
+            // Optimistically update the UI to show the draw is complete
+            // This will be overridden by the actual refetch data
+            console.log('Draw transaction completed, optimistically updating UI...');
+
             // If we have a response with txHash, proceed with waiting
             if (res && res.txHash) {
                 await utils.waitForTransaction(res.txHash);
-                // refetch to pick up winner flag
+                // Multiple refetch attempts to ensure we get the updated state
                 await refetch();
+                // Wait a bit and refetch again to handle potential delays
+                setTimeout(async () => {
+                    await refetch();
+                }, 2000);
             } else {
                 // If no explicit errors but also no txHash, assume success
                 console.log('Draw winner completed (null response but no errors), assuming success');
                 await refetch();
+                // Additional refetch after a delay
+                setTimeout(async () => {
+                    await refetch();
+                }, 2000);
             }
         } catch (e) {
             console.error('Draw winner error:', e);
@@ -339,6 +353,7 @@ const LotteryDashboard = ({
                                 <MyTicketsInfo
                                     currentRound={lotteryData.currentRound}
                                     walletAddress={walletAddress}
+                                    isDrawn={lotteryData.isDrawn}
                                 />
                             </div>
                         </div>
@@ -473,13 +488,14 @@ const LotteryDashboard = ({
 
                     {/* Manual Refresh Button */}
                     <div className="text-center">
-                        <button
-                            onClick={() => refetch()}
-                            disabled={queryLoading}
-                            className="btn"
-                        >
-                            {queryLoading ? '⏳ Refreshing...' : '🔄 Refresh Data'}
-                        </button>
+
+
+                        {/* Show additional info if there's a potential state mismatch */}
+                        {lotteryData.currentRound > 0 && lotteryData.ticketCount > 0 && !lotteryData.isDrawn && (
+                            <div className="mt-2 text-sm text-secondary">
+                                <p>💡 If the draw button is still showing after drawing a winner, try refreshing the data above.</p>
+                            </div>
+                        )}
                     </div>
                 </>
             )}

@@ -33,7 +33,7 @@ query LotteryData {
 export function useLotteryQuery() {
   const { data, loading, error, refetch } = useQuery(LOTTERY_DATA, {
     fetchPolicy: 'cache-and-network',
-    pollInterval: 10000,
+    pollInterval: 5000,
     errorPolicy: 'all',
   });
 
@@ -118,7 +118,10 @@ export function useLotteryQuery() {
       } else if (key.startsWith('con_x00011.drawn:')) {
         const r = key.split(':')[1];
         // Fixed: Use the actual drawn flag from the contract
-        drawnFlags[r] = payload === true || payload === 'true' || payload === 1 || payload === '1';
+        // Handle both boolean and string representations
+        const isDrawnValue = payload === true || payload === 'true' || payload === 1 || payload === '1' || payload === 'True';
+        drawnFlags[r] = isDrawnValue;
+        console.log(`Drawn flag for round ${r}: ${payload} -> ${isDrawnValue}`);
       } else if (key.startsWith('con_x00011.winners:')) {
         const r = key.split(':')[1];
         winners[r] = payload || '';
@@ -149,7 +152,9 @@ export function useLotteryQuery() {
       isDrawn,
       winner,
       currentUserAddress,
-      userCountsKey: `${currentRound}|${currentUserAddress}`
+      userCountsKey: `${currentRound}|${currentUserAddress}`,
+      drawnFlags,
+      winners
     });
 
     return {
