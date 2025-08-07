@@ -5,6 +5,127 @@ import useStore from '../lib/store';
 import WalletUtilService from '../lib/wallet-util-service';
 import { useLotteryQuery } from '../fn/useLotteryQuery';
 
+const LotteryResultsTable = ({ lotteryData }) => {
+    if (!lotteryData.isDrawn || lotteryData.currentRound === 0) {
+        return null;
+    }
+
+    return (
+        <div className="card mb-4">
+            <h3 className="text-center mb-4" style={{ fontSize: '1.25rem', fontWeight: '600' }}>📊 Last Lottery Results</h3>
+            <div style={{
+                overflowX: 'auto',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-primary)',
+                background: 'var(--bg-card)'
+            }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead style={{
+                        background: 'linear-gradient(90deg, var(--bg-tertiary), var(--bg-secondary))',
+                        borderBottom: '1px solid var(--border-primary)'
+                    }}>
+                        <tr>
+                            <th style={{
+                                textAlign: 'left',
+                                padding: 'var(--space-lg) var(--space-xl)',
+                                fontWeight: '600',
+                                color: 'var(--text-primary)',
+                                borderBottom: '1px solid var(--border-primary)'
+                            }}>Round</th>
+                            <th style={{
+                                textAlign: 'left',
+                                padding: 'var(--space-lg) var(--space-xl)',
+                                fontWeight: '600',
+                                color: 'var(--text-primary)',
+                                borderBottom: '1px solid var(--border-primary)'
+                            }}>Tickets Sold</th>
+                            <th style={{
+                                textAlign: 'left',
+                                padding: 'var(--space-lg) var(--space-xl)',
+                                fontWeight: '600',
+                                color: 'var(--text-primary)',
+                                borderBottom: '1px solid var(--border-primary)'
+                            }}>Value Raised</th>
+                            <th style={{
+                                textAlign: 'left',
+                                padding: 'var(--space-lg) var(--space-xl)',
+                                fontWeight: '600',
+                                color: 'var(--text-primary)',
+                                borderBottom: '1px solid var(--border-primary)'
+                            }}>Winner</th>
+                        </tr>
+                    </thead>
+                    <tbody style={{ background: 'var(--bg-card)' }}>
+                        <tr style={{
+                            borderBottom: '1px solid var(--border-primary)',
+                            transition: 'var(--transition-fast)'
+                        }}>
+                            <td style={{
+                                padding: 'var(--space-lg) var(--space-xl)',
+                                borderBottom: '1px solid var(--border-primary)'
+                            }}>
+                                <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    padding: 'var(--space-sm) var(--space-md)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '500',
+                                    background: 'var(--accent-primary)',
+                                    color: 'var(--text-primary)'
+                                }}>
+                                    #{lotteryData.currentRound}
+                                </span>
+                            </td>
+                            <td style={{
+                                padding: 'var(--space-lg) var(--space-xl)',
+                                borderBottom: '1px solid var(--border-primary)'
+                            }}>
+                                <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                                    {lotteryData.ticketCount}
+                                </span>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginLeft: 'var(--space-xs)' }}>
+                                    tickets
+                                </span>
+                            </td>
+                            <td style={{
+                                padding: 'var(--space-lg) var(--space-xl)',
+                                borderBottom: '1px solid var(--border-primary)'
+                            }}>
+                                <span style={{ fontWeight: '600', color: 'var(--accent-success)' }}>
+                                    {lotteryData.pool.toFixed(2)}
+                                </span>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginLeft: 'var(--space-xs)' }}>
+                                    XIAN
+                                </span>
+                            </td>
+                            <td style={{
+                                padding: 'var(--space-lg) var(--space-xl)',
+                                borderBottom: '1px solid var(--border-primary)'
+                            }}>
+                                <span style={{
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.875rem',
+                                    background: 'var(--bg-tertiary)',
+                                    padding: 'var(--space-xs) var(--space-sm)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    color: 'var(--text-primary)',
+                                    border: '1px solid var(--border-primary)'
+                                }}>
+                                    {lotteryData.winner ?
+                                        `${lotteryData.winner.slice(0, 8)}...${lotteryData.winner.slice(-6)}` :
+                                        'N/A'
+                                    }
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
+
 // Component to fetch and display user's tickets for current round
 const MyTicketsInfo = ({ currentRound, walletAddress, isDrawn }) => {
     const [ticketCount, setTicketCount] = useState(0);
@@ -405,6 +526,9 @@ const LotteryDashboard = ({
                             )}
                         </div>
                     )}
+
+                    {/* Lottery Results Table */}
+                    <LotteryResultsTable lotteryData={lotteryData} />
 
                     {/* Lottery Status */}
                     {lotteryData.currentRound > 0 && !lotteryData.isActive && !lotteryData.isDrawn && (
