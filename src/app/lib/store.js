@@ -3,7 +3,14 @@ import { create } from 'zustand';
 
 const useStore = create((set, get) => ({
     walletAddressElementValue: "Connect Wallet",
+    walletAddress: null, // Store the full wallet address
+    isWalletConnected: false, // Boolean flag for connection status
     setWalletAddressElementValue: (value) => set({ walletAddressElementValue: value }),
+    setWalletAddress: (address) => set({ 
+        walletAddress: address,
+        isWalletConnected: Boolean(address && address !== 'Not connected'),
+        walletAddressElementValue: address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Connect Wallet"
+    }),
     
     // Voting system state
     polls: [],

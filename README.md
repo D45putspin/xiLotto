@@ -1,14 +1,15 @@
-# Decentralized Voting System
+# XiLotto - Decentralized Lottery System
 
-A modern, blockchain-based voting application built with Next.js and the Xian blockchain.
+A modern, blockchain-based lottery application built with Next.js and the Xian blockchain.
 
 ## 🚀 Features
 
-- **Create Polls**: Users can create new polls with multiple voting options
-- **Vote Securely**: Cast votes using blockchain technology for transparency
-- **Real-time Results**: See live voting results with percentage breakdowns
+- **Buy Tickets**: Users can purchase lottery tickets using XIAN tokens
+- **Real-time Pool**: See live lottery pool amounts and ticket counts
+- **Winner Drawing**: Admin can draw winners with deterministic randomness
 - **User-friendly Interface**: Clean, modern UI with Bulma CSS framework
 - **Wallet Integration**: Seamless integration with Xian wallet extension
+- **Ticket History**: View your ticket history and winnings
 
 ## 🛠️ Technology Stack
 
@@ -39,7 +40,7 @@ A modern, blockchain-based voting application built with Next.js and the Xian bl
    ```
 
 3. **Open Browser**
-   Navigate to `http://localhost:3000`
+   Navigate to `http://localhost:3001`
 
 4. **Connect Wallet**
    - Install the Xian Wallet Extension
@@ -48,55 +49,55 @@ A modern, blockchain-based voting application built with Next.js and the Xian bl
 
 ## 🎯 How to Use
 
-### Creating a Poll
+### Buying Tickets
 
-1. Click "Create New Poll" button
-2. Enter a poll title
-3. Add voting options (minimum 2)
-4. Click "Create Poll" to submit to blockchain
-
-### Voting
-
-1. Browse available polls
-2. Click "Vote" on your preferred option
+1. Connect your Xian wallet
+2. Click "Buy Ticket" button
 3. Confirm transaction in your wallet
-4. See real-time results update
+4. See your ticket count update in real-time
+
+### Admin Functions
+
+1. **Start Lottery**: Begin a new lottery round
+2. **Draw Winner**: Select a winner using deterministic randomness
+3. **Set Parameters**: Adjust ticket price, fee percentage, and limits
 
 ### Viewing Results
 
-- Results are displayed in real-time
-- Progress bars show vote percentages
-- Total vote counts are visible
-- Your voted option is highlighted
+- Real-time pool amounts and ticket counts
+- Winner announcements with prize breakdowns
+- Your ticket history and winnings
 
 ## 🔧 Smart Contract Integration
 
 The dapp integrates with Xian smart contracts for:
 
-- `create_poll`: Creates new polls on the blockchain
-- `vote`: Submits votes securely
-- `get_polls`: Retrieves poll data
-- `get_votes`: Gets voting results
+- `buy_ticket`: Purchase lottery tickets
+- `start_lottery`: Begin new lottery rounds
+- `draw`: Select winners with deterministic randomness
+- `set_ticket_price`: Adjust ticket pricing
+- `set_fee_percent`: Configure fee percentages
+- `set_max_tickets_per_user`: Set purchase limits
 
 ## 🎨 UI Components
 
-- **Poll Cards**: Display poll information and voting options
-- **Progress Bars**: Visual representation of vote percentages
-- **Vote Buttons**: Interactive voting interface
-- **Create Form**: Modal for creating new polls
+- **Lottery Dashboard**: Main lottery interface with stats and actions
+- **Admin Panel**: Parameter management and lottery control
+- **Ticket History**: View your past tickets and winnings
+- **Real-time Stats**: Live pool amounts and ticket counts
 
 ## 🔒 Security Features
 
-- **Blockchain Verification**: All votes are recorded on-chain
-- **One Vote Per User**: Prevents duplicate voting
-- **Transparent Results**: All data is publicly verifiable
+- **Blockchain Verification**: All transactions recorded on-chain
+- **Deterministic Randomness**: Fair winner selection using block data
+- **Transparent Results**: All data publicly verifiable
 - **Wallet Authentication**: Secure user identification
 
 ## 🚀 Future Enhancements
 
-- [ ] Token-weighted voting
-- [ ] Time-locked polls
-- [ ] Delegated voting
+- [ ] Multiple lottery types
+- [ ] Time-locked lotteries
+- [ ] Token-weighted lotteries
 - [ ] Mobile app
 - [ ] Advanced analytics
 - [ ] Multi-language support
@@ -115,4 +116,3 @@ This project is licensed under the MIT License.
 ## 🆘 Support
 
 For support, please open an issue in the GitHub repository or contact the development team.
-# xipoll

@@ -3,14 +3,14 @@ import { gql, useQuery } from '@apollo/client';
 import WalletUtilService from '../lib/wallet-util-service';
 
 // GraphQL query to batch-fetch polls, votes and counters
-const XIPOLL_DATA = gql`
-query XIPollData {
+const xilotto_DATA = gql`
+query xilottoData {
   allStates(
     filter: {
       or: [
-        { key: { equalTo: "con_xipoll_v0_clean.poll_counter" } }
-        { key: { startsWith: "con_xipoll_v0_clean.polls:" } }
-        { key: { startsWith: "con_xipoll_v0_clean.user_votes:" } }
+        { key: { equalTo: "con_xilotto_v0_clean.poll_counter" } }
+        { key: { startsWith: "con_xilotto_v0_clean.polls:" } }
+        { key: { startsWith: "con_xilotto_v0_clean.user_votes:" } }
       ]
     }
   ) {
@@ -26,10 +26,10 @@ query XIPollData {
 `;
 
 /**
- * Custom hook to fetch and normalize XiPOLL data
+ * Custom hook to fetch and normalize xilotto data
  */
 export function usePollsQuery() {
-  const { data, loading, error, refetch } = useQuery(XIPOLL_DATA, {
+  const { data, loading, error, refetch } = useQuery(xilotto_DATA, {
     fetchPolicy: 'cache-and-network',
     pollInterval: 10000, // Refetch every 10 seconds to reduce frequency
     errorPolicy: 'all', // Allow partial results
@@ -69,7 +69,7 @@ export function usePollsQuery() {
 
     for (const { key, value } of nodes) {
       // Filter for our contract
-      if (!key.startsWith('con_xipoll_v0_clean.')) continue;
+      if (!key.startsWith('con_xilotto_v0_clean.')) continue;
       
       try {
         // The value is already a JSON object, no need to decode

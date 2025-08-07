@@ -12,41 +12,26 @@ const Nav = () => {
 
     return (
         <nav className="nav" aria-label="main navigation">
-            <div className="container">
-                <div className="nav-content">
-                    <div className="nav-brand">
-                        <a href="/" className="nav-logo">
-                            <div className="logo-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                            </div>
-                            <span className="logo-text">XiPOLL</span>
-                        </a>
-                    </div>
-
-                    <div className="nav-menu">
-                        <div className="nav-start">
-                            <a href="/my-votes" className="nav-link">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M9 12l2 2 4-4"></path>
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                </svg>
-                                My Votes
-                            </a>
+            <div className="nav-content">
+                <div className="nav-brand">
+                    <a href="/" className="nav-logo">
+                        <div className="logo-icon">
+                            🎰
                         </div>
-                        <div className="nav-end">
+                        <span className="logo-text">XiLotto</span>
+                    </a>
+                </div>
 
-                            <div className="wallet-status">
-                                <div className="wallet-indicator">
-                                    <div className={`status-dot ${walletAddressElementValue !== 'Not connected' ? 'connected' : 'disconnected'}`}></div>
-                                </div>
-                                <span className="wallet-address" id="wallet-address">
-                                    {formatWalletAddress(walletAddressElementValue)}
-                                </span>
+                <div className="nav-menu">
+
+                    <div className="nav-end">
+                        <div className="wallet-status">
+                            <div className="wallet-indicator">
+                                <div className={`status-dot ${walletAddressElementValue !== 'Not connected' ? 'connected' : 'disconnected'}`}></div>
                             </div>
+                            <span className="wallet-address" id="wallet-address">
+                                {formatWalletAddress(walletAddressElementValue)}
+                            </span>
                         </div>
                     </div>
                 </div>

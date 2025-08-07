@@ -33,7 +33,7 @@ export default function EmbedCodesPage() {
   frameborder="0"
   scrolling="no"
   style="border: 1px solid #ddd; border-radius: 8px;"
-  title="XiPOLL - Decentralized Voting"
+  title="xilotto - Decentralized Voting"
 ></iframe>`;
 
     const htmlCode = `<div style="width: ${currentSize.width}; height: ${currentSize.height};">
@@ -44,7 +44,7 @@ export default function EmbedCodesPage() {
     frameborder="0"
     scrolling="no"
     style="border: 1px solid #ddd; border-radius: 8px;"
-    title="XiPOLL - Decentralized Voting"
+    title="xilotto - Decentralized Voting"
   ></iframe>
 </div>`;
 
@@ -138,7 +138,7 @@ export default function EmbedCodesPage() {
                                 frameBorder="0"
                                 scrolling="no"
                                 style={{ border: '1px solid #ddd', borderRadius: '8px' }}
-                                title="XiPOLL - Decentralized Voting"
+                                title="xilotto - Decentralized Voting"
                             />
                         </div>
                     </div>

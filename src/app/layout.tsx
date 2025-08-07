@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "XiPOLL - Decentralized Voting",
+  title: "xilotto - Decentralized Voting",
   description: "Decentralized voting on the Xian blockchain with advanced governance features",
 };
 
