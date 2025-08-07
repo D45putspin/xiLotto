@@ -6,13 +6,88 @@ import WalletUtilService from '../lib/wallet-util-service';
 import { useLotteryQuery } from '../fn/useLotteryQuery';
 
 const LotteryResultsTable = ({ lotteryData }) => {
-    if (!lotteryData.isDrawn || lotteryData.currentRound === 0) {
+    const [previousRoundData, setPreviousRoundData] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    // Determine which round to show data for
+    const displayRound = lotteryData.isDrawn ? lotteryData.currentRound : lotteryData.currentRound - 1;
+    const isShowingPreviousRound = !lotteryData.isDrawn && lotteryData.isActive;
+
+    // Fetch previous round data if needed
+    useEffect(() => {
+        if (isShowingPreviousRound && displayRound > 0) {
+            fetchPreviousRoundData();
+        }
+    }, [displayRound, isShowingPreviousRound]);
+
+    const fetchPreviousRoundData = async () => {
+        setLoading(true);
+        try {
+            const baseUrl = 'https://testnet.xian.org/abci_query';
+
+            // Fetch pool data for previous round
+            const poolKey = `"/get/con_x00011.pool:${displayRound}"`;
+            const poolRes = await fetch(`${baseUrl}?path=${encodeURIComponent(poolKey)}&prove=false`);
+            const poolJson = await poolRes.json();
+
+            // Fetch ticket count for previous round
+            const ticketCountKey = `"/get/con_x00011.ticket_count:${displayRound}"`;
+            const ticketCountRes = await fetch(`${baseUrl}?path=${encodeURIComponent(ticketCountKey)}&prove=false`);
+            const ticketCountJson = await ticketCountRes.json();
+
+            // Fetch winner for previous round
+            const winnerKey = `"/get/con_x00011.winners:${displayRound}"`;
+            const winnerRes = await fetch(`${baseUrl}?path=${encodeURIComponent(winnerKey)}&prove=false`);
+            const winnerJson = await winnerRes.json();
+
+            let pool = 0;
+            let ticketCount = 0;
+            let winner = '';
+
+            try {
+                if (poolJson.result?.response?.value) {
+                    pool = parseFloat(window.atob(poolJson.result.response.value)) || 0;
+                }
+                if (ticketCountJson.result?.response?.value) {
+                    ticketCount = parseInt(window.atob(ticketCountJson.result.response.value)) || 0;
+                }
+                if (winnerJson.result?.response?.value) {
+                    winner = window.atob(winnerJson.result.response.value) || '';
+                }
+            } catch (e) {
+                console.error('Error parsing previous round data:', e);
+            }
+
+            setPreviousRoundData({ pool, ticketCount, winner });
+        } catch (e) {
+            console.error('Error fetching previous round data:', e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Show results if there's a drawn round OR if there's an active lottery with previous round data
+    if (lotteryData.currentRound === 0) {
+        return null;
+    }
+
+    // If current round is active and not drawn, show previous round results
+    const showResults = lotteryData.isDrawn || (lotteryData.isActive && lotteryData.currentRound > 1);
+
+    if (!showResults) {
         return null;
     }
 
     return (
         <div className="card mb-4">
-            <h3 className="text-center mb-4" style={{ fontSize: '1.25rem', fontWeight: '600' }}>📊 Last Lottery Results</h3>
+            <h3 className="text-center mb-4" style={{ fontSize: '1.25rem', fontWeight: '600' }}>
+                📊 {lotteryData.isDrawn ? 'Current Round Results' : 'Last Round Results'}
+                {isShowingPreviousRound && loading && (
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginLeft: 'var(--space-sm)' }}>
+                        (Loading...)
+                    </span>
+                )}
+            </h3>
             <div style={{
                 overflowX: 'auto',
                 borderRadius: 'var(--radius-md)',
@@ -74,7 +149,7 @@ const LotteryResultsTable = ({ lotteryData }) => {
                                     background: 'var(--accent-primary)',
                                     color: 'var(--text-primary)'
                                 }}>
-                                    #{lotteryData.currentRound}
+                                    #{lotteryData.isDrawn ? lotteryData.currentRound : lotteryData.currentRound - 1}
                                 </span>
                             </td>
                             <td style={{
@@ -82,7 +157,7 @@ const LotteryResultsTable = ({ lotteryData }) => {
                                 borderBottom: '1px solid var(--border-primary)'
                             }}>
                                 <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
-                                    {lotteryData.ticketCount}
+                                    {isShowingPreviousRound && previousRoundData ? previousRoundData.ticketCount : lotteryData.ticketCount}
                                 </span>
                                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginLeft: 'var(--space-xs)' }}>
                                     tickets
@@ -93,7 +168,7 @@ const LotteryResultsTable = ({ lotteryData }) => {
                                 borderBottom: '1px solid var(--border-primary)'
                             }}>
                                 <span style={{ fontWeight: '600', color: 'var(--accent-success)' }}>
-                                    {lotteryData.pool.toFixed(2)}
+                                    {isShowingPreviousRound && previousRoundData ? previousRoundData.pool.toFixed(2) : lotteryData.pool.toFixed(2)}
                                 </span>
                                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginLeft: 'var(--space-xs)' }}>
                                     XIAN
@@ -112,8 +187,8 @@ const LotteryResultsTable = ({ lotteryData }) => {
                                     color: 'var(--text-primary)',
                                     border: '1px solid var(--border-primary)'
                                 }}>
-                                    {lotteryData.winner ?
-                                        `${lotteryData.winner.slice(0, 8)}...${lotteryData.winner.slice(-6)}` :
+                                    {(isShowingPreviousRound && previousRoundData ? previousRoundData.winner : lotteryData.winner) ?
+                                        `${(isShowingPreviousRound && previousRoundData ? previousRoundData.winner : lotteryData.winner).slice(0, 8)}...${(isShowingPreviousRound && previousRoundData ? previousRoundData.winner : lotteryData.winner).slice(-6)}` :
                                         'N/A'
                                     }
                                 </span>
