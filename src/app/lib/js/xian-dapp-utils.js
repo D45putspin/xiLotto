@@ -1,7 +1,7 @@
 // lib/wallet-util-service.mjs
 
 const XianWalletUtils = {
-  rpcUrl: 'https://testnet.xian.org',
+  rpcUrl: 'https://devnet.xian.org',
   isWalletReady: false,
   initialized: false,
   isUnlocking: false, // Track if wallet is currently being unlocked

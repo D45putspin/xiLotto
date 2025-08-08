@@ -16,19 +16,19 @@ const LotteryAdmin = () => {
     const fetchParameters = async () => {
         try {
             const ticketPriceRes = await fetch(
-                'https://testnet.xian.org/abci_query?path="get/con_x00011.ticket_price"'
+                'https://devnet.xian.org/abci_query?path="get/con_x00011.ticket_price"'
             );
             const ticketPriceData = await ticketPriceRes.json();
             const ticketPrice = parseInt(window.atob(ticketPriceData.result.response.value)) || 100;
 
             const feePercentRes = await fetch(
-                'https://testnet.xian.org/abci_query?path="get/con_x00011.fee_percent"'
+                'https://devnet.xian.org/abci_query?path="get/con_x00011.fee_percent"'
             );
             const feePercentData = await feePercentRes.json();
             const feePercent = parseInt(window.atob(feePercentData.result.response.value)) || 10;
 
             const maxTicketsRes = await fetch(
-                'https://testnet.xian.org/abci_query?path="get/con_x00011.max_tickets_per_user"'
+                'https://devnet.xian.org/abci_query?path="get/con_x00011.max_tickets_per_user"'
             );
             const maxTicketsData = await maxTicketsRes.json();
             const maxTicketsPerUser = parseInt(window.atob(maxTicketsData.result.response.value)) || 0;

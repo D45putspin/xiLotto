@@ -33,7 +33,7 @@ const LotteryResultsTable = ({ lotteryData }) => {
     const fetchRoundHistory = async () => {
         setLoading(true);
         try {
-            const baseUrl = 'https://testnet.xian.org/abci_query';
+            const baseUrl = 'https://devnet.xian.org/abci_query';
             const rounds = [];
 
             // Always show all completed rounds + current round if drawn
@@ -296,7 +296,7 @@ const MyTicketsInfo = ({ currentRound, walletAddress, isDrawn }) => {
         setError(null);
 
         try {
-            const baseUrl = 'https://testnet.xian.org/abci_query';
+            const baseUrl = 'https://devnet.xian.org/abci_query';
 
             // Get tickets for current round
             const ticketsKey = `"/get/con_x00011.tickets:${currentRound}"`;
