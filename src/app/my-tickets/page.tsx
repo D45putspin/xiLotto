@@ -45,7 +45,7 @@ export default function MyTicketsPage() {
         await utils.init();
       }
 
-      const baseUrl = 'https://devnet.xian.org/abci_query';
+      const baseUrl = 'https://node.xian.org/abci_query';
       
       // 1. Get current round
       const roundKey = `"/get/con_x00011.current_round"`;

@@ -5,8 +5,8 @@ import WalletUtilService from '../lib/wallet-util-service';
 import { generateSecretAndCommit } from '../lib/crypto-utils';
 import { storeDrawSecret, getDrawSecret, removeDrawSecret, getAllDrawSecrets, clearAllDrawSecrets, isLocalStorageAvailable } from '../lib/secret-storage';
 
-const CONTRACT = 'con_x00023';
-const RPC = 'https://devnet.xian.org';
+const CONTRACT = 'con_xilottov1';
+const RPC = 'https://node.xian.org';
 
 const LotteryAdmin = () => {
     const [creating, setCreating] = useState(false);

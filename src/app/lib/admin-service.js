@@ -30,7 +30,7 @@ class AdminService {
 
             // Get the owner address from the contract
             const ownerRes = await fetch(
-                'https://devnet.xian.org/abci_query?path="get/con_x00011.owner"'
+                'https://node.xian.org/abci_query?path="get/con_x00011.owner"'
             );
             const ownerData = await ownerRes.json();
             

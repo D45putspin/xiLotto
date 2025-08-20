@@ -3,7 +3,7 @@ import React from 'react';
 import { gql, useQuery } from '@apollo/client';
 import WalletUtilService from '../lib/wallet-util-service';
 
-const CONTRACT = 'con_x00023';
+const CONTRACT = 'con_xilottov1';
 
 const LOTTERY_DATA = gql`
   query LotteryData {
@@ -97,7 +97,7 @@ export function useLotteryQuery() {
     for (const { key, value } of nodes) {
       if (!key.startsWith(`${CONTRACT}.`)) continue;
 
-      const short = key.slice(CONTRACT.length + 1); // remove "con_x00023."
+      const short = key.slice(CONTRACT.length + 1); // remove "con_xilottov1."
       let payload;
       try {
         payload = typeof value === 'string' ? JSON.parse(value) : value;

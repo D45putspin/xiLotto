@@ -6,8 +6,8 @@ import WalletUtilService from '../lib/wallet-util-service';
 import { useLotteryQuery } from '../fn/useLotteryQuery';
 import { formatTokenName } from '../lib/token-utils';
 
-const CONTRACT = 'con_x00023';
-const RPC = 'https://devnet.xian.org';
+const CONTRACT = 'con_xilottov1';
+const RPC = 'https://node.xian.org';
 
 const LotteryResultsTable = ({ lotteryData, walletAddress }) => {
     const [history, setHistory] = useState([]);
@@ -434,7 +434,7 @@ const AdminManager = ({ currentDraw }) => {
             setMsg(null);
             const utils = WalletUtilService.getInstance().XianWalletUtils;
             if (!utils.initialized) utils.init();
-            const res = await utils.sendTransaction('con_x00023', method, { draw_id: currentDraw, who: addr });
+            const res = await utils.sendTransaction('con_xilottov1', method, { draw_id: currentDraw, who: addr });
             if (res && res.errors) throw new Error(res.errors);
             setMsg('✅ Done');
         } catch (e) {

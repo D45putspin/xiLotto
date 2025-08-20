@@ -3,7 +3,7 @@ import React from 'react';
 import { gql, useQuery } from '@apollo/client';
 import WalletUtilService from '../lib/wallet-util-service';
 
-const CONTRACT = 'con_x00023';
+const CONTRACT = 'con_xilottov1';
 
 const DRAWS_DATA = gql`
   query DrawsData {

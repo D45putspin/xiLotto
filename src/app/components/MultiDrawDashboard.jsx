@@ -9,7 +9,7 @@ import { getDrawSecret, removeDrawSecret, getAllDrawSecrets, isLocalStorageAvail
 import useStore from '../lib/store';
 import { formatTokenName } from '../lib/token-utils';
 
-const CONTRACT = 'con_x00023';
+const CONTRACT = 'con_xilottov1';
 
 export default function MultiDrawDashboard() {
     const { activeDraws, completedDraws, loading, error, refetch, currentUserAddress } = useDrawsQuery();

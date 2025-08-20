@@ -328,7 +328,7 @@ The contract must be deployed with the exact name: `"con_no_sec_w_weight_fix_int
 
 ### Network
 
-Deploy to Xian testnet: `https://devnet.xian.org`
+Deploy to Xian testnet: `https://node.xian.org`
 
 ### Initial State
 
@@ -358,7 +358,7 @@ Deploy to Xian testnet: `https://devnet.xian.org`
 The frontend expects:
 
 1. Contract name: `"con_no_sec_w_weight_fix_int"`
-2. RPC endpoint: `https://devnet.xian.org`
+2. RPC endpoint: `https://node.xian.org`
 3. All methods to return JSON-serializable data
 4. Error responses to be properly formatted
 5. Transaction responses to include transaction hash and status

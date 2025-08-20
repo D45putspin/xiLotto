@@ -6,7 +6,7 @@ import { useDrawsQuery } from '../../fn/useDrawsQuery';
 import WalletUtilService from '../../lib/wallet-util-service';
 import { formatTokenName } from '../../lib/token-utils';
 
-const CONTRACT = 'con_x00023';
+const CONTRACT = 'con_xilottov1';
 
 export default function DrawPage() {
     const params = useParams();

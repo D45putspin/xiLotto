@@ -1,7 +1,7 @@
 // lib/wallet-util-service.mjs
 
 const XianWalletUtils = {
-  rpcUrl: 'https://devnet.xian.org',
+  rpcUrl: 'https://node.xian.org',
   isWalletReady: false,
   initialized: false,
   isUnlocking: false,
