@@ -1,5 +1,9 @@
+'use client';
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ApolloProvider } from '@apollo/client';
+import { createApolloClient } from './lib/apolloClient';
 import "./globals.css";
 
 const inter = Inter({ 
@@ -7,10 +11,8 @@ const inter = Inter({
   variable: "--font-inter"
 });
 
-export const metadata: Metadata = {
-  title: "xilotto - Decentralized Voting",
-  description: "Decentralized voting on the Xian blockchain with advanced governance features",
-};
+// Create Apollo Client instance
+const client = createApolloClient();
 
 export default function RootLayout({
   children,
@@ -19,7 +21,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <head>
+        <title>xilotto - Decentralized Voting</title>
+        <meta name="description" content="Decentralized voting on the Xian blockchain with advanced governance features" />
+      </head>
+      <body className={inter.className}>
+        <ApolloProvider client={client}>
+          {children}
+        </ApolloProvider>
+      </body>
     </html>
   );
 }

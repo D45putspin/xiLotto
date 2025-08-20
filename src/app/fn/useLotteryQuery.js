@@ -1,33 +1,38 @@
+// fn/useLotteryQuery.js
 import React from 'react';
 import { gql, useQuery } from '@apollo/client';
 import WalletUtilService from '../lib/wallet-util-service';
 
+const CONTRACT = 'con_x00023';
+
 const LOTTERY_DATA = gql`
-query LotteryData {
-  allStates(
-    filter: {
-      or: [
-        { key: { equalTo: "con_x00011.current_round" } }
-        { key: { equalTo: "con_x00011.ticket_price" } }
-        { key: { equalTo: "con_x00011.fee_percent" } }
-        { key: { equalTo: "con_x00011.max_tickets_per_user" } }
-        { key: { equalTo: "con_x00011.owner" } }
-        { key: { startsWith: "con_x00011.pool:" } }
-        { key: { startsWith: "con_x00011.ticket_count:" } }
-        { key: { startsWith: "con_x00011.drawn:" } }
-        { key: { startsWith: "con_x00011.winners:" } }
-        { key: { startsWith: "con_x00011.user_counts:" } }
-      ]
-    }
-  ) {
-    edges {
-      node {
-        key
-        value
+  query LotteryData {
+    allStates(
+      filter: {
+        or: [
+          { key: { equalTo: "${CONTRACT}.draw_counter" } }
+          { key: { startsWith: "${CONTRACT}.draw_creator:" } }
+          { key: { startsWith: "${CONTRACT}.draw_token:" } }
+          { key: { startsWith: "${CONTRACT}.draw_price:" } }
+          { key: { startsWith: "${CONTRACT}.draw_fee_percent:" } }
+          { key: { startsWith: "${CONTRACT}.draw_cap:" } }
+          { key: { startsWith: "${CONTRACT}.draw_pool:" } }
+          { key: { startsWith: "${CONTRACT}.draw_ticket_count:" } }
+          { key: { startsWith: "${CONTRACT}.draw_drawn:" } }
+          { key: { startsWith: "${CONTRACT}.draw_winner:" } }
+          { key: { startsWith: "${CONTRACT}.draw_user_counts:" } }
+          { key: { startsWith: "${CONTRACT}.draw_admin_list:" } }
+        ]
+      }
+    ) {
+      edges {
+        node {
+          key
+          value
+        }
       }
     }
   }
-}
 `;
 
 export function useLotteryQuery() {
@@ -38,17 +43,15 @@ export function useLotteryQuery() {
   });
 
   const [currentUserAddress, setCurrentUserAddress] = React.useState(null);
-  
+
   React.useEffect(() => {
     const getCurrentUserAddress = async () => {
       try {
-        const utils = WalletUtilService.getInstance().XianWalletUtils;
-        if (utils && !utils.initialized) await utils.init();
-        const info = await utils.requestWalletInfo();
-        console.log('Got wallet info:', info);
-        setCurrentUserAddress(info.address);
-      } catch (e) {
-        console.warn('Failed to get wallet address', e);
+        const svc = WalletUtilService.getInstance().XianWalletUtils;
+        if (svc && !svc.initialized) svc.init();
+        const info = await svc.requestWalletInfo();
+        setCurrentUserAddress(info?.address || null);
+      } catch {
         setCurrentUserAddress(null);
       }
     };
@@ -56,40 +59,45 @@ export function useLotteryQuery() {
   }, []);
 
   const lotteryData = React.useMemo(() => {
-    if (!data) {
-      return {
-        currentRound: 0,
-        pool: 0,
-        ticketCount: 0,
-        myTickets: 0,
-        ticketPrice: 1.0,
-        feePercent: 10,
-        maxTicketsPerUser: 0,
-        isActive: false,
-        isDrawn: false,
-        winner: '',
-        owner: '',
-        isAdmin: false,
-      };
-    }
+    // default shape (kept names for minimal UI changes)
+    const def = {
+      currentRound: 0,     // == current draw id
+      pool: 0,
+      ticketCount: 0,
+      myTickets: 0,
+      ticketPrice: 0,
+      feePercent: 0,
+      maxTicketsPerUser: 0,
+      isActive: false,
+      isDrawn: false,
+      winner: '',
+      owner: '',           // == creator
+      token: '',
+      admins: [],
+      isAdmin: false,
+    };
 
-    const nodes = data.allStates.edges.map(e => e.node);
-    console.log('GraphQL nodes:', nodes);
-    
-    let currentRound = 0,
-        ticketPrice = 1.0,
-        feePercent = 10,
-        maxTicketsPerUser = 0,
-        owner = '';
-    const pools = {},
-          ticketCounts = {},
-          drawnFlags = {},
-          winners = {},
-          userCounts = {};
+    if (!data) return def;
+
+    const nodes = data.allStates.edges.map((e) => e.node);
+
+    let drawCounter = 0;
+    const creators = {};
+    const tokens = {};
+    const prices = {};
+    const fees = {};
+    const caps = {};
+    const pools = {};
+    const ticketCounts = {};
+    const drawnFlags = {};
+    const winners = {};
+    const userCounts = {};
+    const adminLists = {};
 
     for (const { key, value } of nodes) {
-      if (!key.startsWith('con_x00011.')) continue;
-      
+      if (!key.startsWith(`${CONTRACT}.`)) continue;
+
+      const short = key.slice(CONTRACT.length + 1); // remove "con_x00023."
       let payload;
       try {
         payload = typeof value === 'string' ? JSON.parse(value) : value;
@@ -97,79 +105,89 @@ export function useLotteryQuery() {
         payload = value;
       }
 
-      console.log(`Processing: ${key} = ${payload}`);
-
-      if (key === 'con_x00011.current_round') {
-        currentRound = parseInt(payload) || 0;
-      } else if (key === 'con_x00011.ticket_price') {
-        ticketPrice = parseFloat(payload) || 1.0;
-      } else if (key === 'con_x00011.fee_percent') {
-        feePercent = parseInt(payload) || 10;
-      } else if (key === 'con_x00011.max_tickets_per_user') {
-        maxTicketsPerUser = parseInt(payload) || 0;
-      } else if (key === 'con_x00011.owner') {
-        owner = payload || '';
-      } else if (key.startsWith('con_x00011.pool:')) {
-        const r = key.split(':')[1];
-        pools[r] = parseFloat(payload) || 0;
-      } else if (key.startsWith('con_x00011.ticket_count:')) {
-        const r = key.split(':')[1];
-        ticketCounts[r] = parseInt(payload) || 0;
-      } else if (key.startsWith('con_x00011.drawn:')) {
-        const r = key.split(':')[1];
-        // Fixed: Use the actual drawn flag from the contract
-        // Handle both boolean and string representations
-        const isDrawnValue = payload === true || payload === 'true' || payload === 1 || payload === '1' || payload === 'True';
-        drawnFlags[r] = isDrawnValue;
-        console.log(`Drawn flag for round ${r}: ${payload} -> ${isDrawnValue}`);
-      } else if (key.startsWith('con_x00011.winners:')) {
-        const r = key.split(':')[1];
-        winners[r] = payload || '';
-      } else if (key.startsWith('con_x00011.user_counts:')) {
-        const parts = key.split(':');
-        if (parts.length >= 3) {
-          const r = parts[1];
-          const user = parts.slice(2).join(':'); // Handle addresses that might contain colons
-          userCounts[`${r}|${user}`] = parseInt(payload) || 0;
+      if (short === 'draw_counter') {
+        drawCounter = parseInt(payload) || 0;
+      } else if (short.startsWith('draw_creator:')) {
+        const id = short.split(':')[1];
+        creators[id] = payload || '';
+      } else if (short.startsWith('draw_token:')) {
+        const id = short.split(':')[1];
+        tokens[id] = payload || '';
+      } else if (short.startsWith('draw_price:')) {
+        const id = short.split(':')[1];
+        prices[id] = parseFloat(payload) || 0;
+      } else if (short.startsWith('draw_fee_percent:')) {
+        const id = short.split(':')[1];
+        fees[id] = parseInt(payload) || 0;
+      } else if (short.startsWith('draw_cap:')) {
+        const id = short.split(':')[1];
+        caps[id] = parseInt(payload) || 0;
+      } else if (short.startsWith('draw_pool:')) {
+        const id = short.split(':')[1];
+        pools[id] = parseFloat(payload) || 0;
+      } else if (short.startsWith('draw_ticket_count:')) {
+        const id = short.split(':')[1];
+        ticketCounts[id] = parseInt(payload) || 0;
+      } else if (short.startsWith('draw_drawn:')) {
+        const id = short.split(':')[1];
+        const v = payload === true || payload === 'true' || payload === 1 || payload === '1' || payload === 'True';
+        drawnFlags[id] = v;
+      } else if (short.startsWith('draw_winner:')) {
+        const id = short.split(':')[1];
+        winners[id] = payload || '';
+      } else if (short.startsWith('draw_user_counts:')) {
+        // key form "draw_user_counts:{id}|{addr}"
+        const rest = short.split(':')[1] || '';
+        const [id, ...addrParts] = rest.split('|');
+        const addr = addrParts.join('|');
+        userCounts[`${id}|${addr}`] = parseInt(payload) || 0;
+      } else if (short.startsWith('draw_admin_list:')) {
+        const id = short.split(':')[1];
+        // value is likely a JSON list
+        try {
+          adminLists[id] = Array.isArray(payload) ? payload : JSON.parse(payload);
+        } catch {
+          adminLists[id] = [];
         }
       }
     }
 
-    const pool = pools[currentRound] || 0;
-    const ticketCount = ticketCounts[currentRound] || 0;
-    const winner = winners[currentRound] || '';
-    // Fixed: Use the actual drawn flag instead of deriving from winner
-    const isDrawn = drawnFlags[currentRound] || false;
-    const myTickets = currentUserAddress ? (userCounts[`${currentRound}|${currentUserAddress}`] || 0) : 0;
-    const isActive = currentRound > 0 && !isDrawn;
+    const id = drawCounter;
+    if (!id || id <= 0) return { ...def, currentRound: 0 };
 
-    console.log('Computed lottery data:', {
-      currentRound,
-      pool,
-      ticketCount,
-      myTickets,
-      isActive,
-      isDrawn,
-      winner,
-      currentUserAddress,
-      userCountsKey: `${currentRound}|${currentUserAddress}`,
-      drawnFlags,
-      winners
-    });
+    const idStr = String(id);
+    const creator = creators[idStr] || '';
+    const token = tokens[idStr] || '';
+    const price = prices[idStr] || 0;
+    const feePercent = fees[idStr] || 0;
+    const maxTicketsPerUser = caps[idStr] || 0;
+    const pool = pools[idStr] || 0;
+    const ticketCount = ticketCounts[idStr] || 0;
+    const isDrawn = !!drawnFlags[idStr];
+    const winner = winners[idStr] || '';
+
+    // admins = [creator] + draw_admin_list
+    const admins = [creator, ...(adminLists[idStr] || [])].filter(Boolean);
+
+    const myTickets = currentUserAddress
+      ? userCounts[`${idStr}|${currentUserAddress}`] || 0
+      : 0;
 
     return {
-      currentRound,
+      currentRound: id, // keep name
       pool,
       ticketCount,
       myTickets,
-      ticketPrice,
+      ticketPrice: price,
       feePercent,
       maxTicketsPerUser,
-      isActive,
+      isActive: id > 0 && !isDrawn,
       isDrawn,
       winner,
-      owner,
-      isAdmin: currentUserAddress === owner,
+      owner: creator,
+      token,
+      admins,
+      isAdmin: currentUserAddress ? admins.includes(currentUserAddress) : false,
     };
   }, [data, currentUserAddress]);
 
