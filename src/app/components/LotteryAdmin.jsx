@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import WalletUtilService from '../lib/wallet-util-service';
+import { storeFinishTxId } from '../lib/format-utils';
 import { generateSecretAndCommit } from '../lib/crypto-utils';
 import { storeDrawSecret, getDrawSecret, removeDrawSecret, getAllDrawSecrets, clearAllDrawSecrets, isLocalStorageAvailable } from '../lib/secret-storage';
+import { truncateAddressMid } from '../lib/format-utils';
 
 const CONTRACT = 'con_xilottov1';
 const RPC = 'https://node.xian.org';
@@ -150,6 +152,10 @@ const LotteryAdmin = () => {
                 reveal: secret
             });
             if (res && res.errors) throw new Error(res.errors);
+            if (res) {
+                const txid = res._txid || res.txid || res.txId || res.hash || res.txhash || res.txHash;
+                if (txid) storeFinishTxId(drawId, txid);
+            }
 
             // Remove the secret from storage after successful finish
             if (storageAvailable) {
@@ -373,7 +379,7 @@ const LotteryAdmin = () => {
                                     </div>
                                     <div className="info-value">
                                         {creator ? (
-                                            <code className="creator-address">{creator}</code>
+                                            <code className="creator-address">{truncateAddressMid(creator)}</code>
                                         ) : (
                                             <span className="no-creator">—</span>
                                         )}
@@ -395,7 +401,7 @@ const LotteryAdmin = () => {
                                                 <div className="admin-avatar">
                                                     {admin === creator ? '👑' : '👤'}
                                                 </div>
-                                                <code className="admin-address">{admin}</code>
+                                                <code className="admin-address">{truncateAddressMid(admin)}</code>
                                                 {admin === creator && (
                                                     <span className="creator-badge">Creator</span>
                                                 )}

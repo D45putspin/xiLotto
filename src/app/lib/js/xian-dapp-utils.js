@@ -35,21 +35,27 @@ const XianWalletUtils = {
     });
 
     document.addEventListener('xianWalletTxStatus', (e) => {
+      try { console.log('[XiLotto] Wallet tx status event:', e.detail); } catch {}
       if (this.state.transaction.requests.length > 0) {
         const resolver = this.state.transaction.requests.shift();
         if ('errors' in e.detail) {
+          try { console.warn('[XiLotto] Wallet tx error:', e.detail); } catch {}
           resolver(e.detail);
         } else {
-          this.getTxResultsAsyncBackoff(e.detail.txid)
+          const txid = e.detail.txid || e.detail.txId || e.detail.hash || e.detail.txhash || e.detail.txHash;
+          if (!txid) {
+            try { console.warn('[XiLotto] No tx id found in wallet tx status payload'); } catch {}
+          }
+          this.getTxResultsAsyncBackoff(txid)
             .then((tx) => {
               try {
                 const decoded = JSON.parse(window.atob(tx.result.tx_result.data));
-                resolver(decoded);
+                resolver({ ...decoded, _txid: txid });
               } catch {
-                resolver(null);
+                resolver({ _txid: txid });
               }
             })
-            .catch(() => resolver(null));
+            .catch(() => resolver({ _txid: txid }));
         }
       }
     });

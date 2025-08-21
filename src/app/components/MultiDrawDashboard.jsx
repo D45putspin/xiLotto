@@ -4,10 +4,12 @@
 import React, { useEffect, useState } from 'react';
 import { useDrawsQuery } from '../fn/useDrawsQuery';
 import WalletUtilService from '../lib/wallet-util-service';
+import { storeFinishTxId } from '../lib/format-utils';
 import { generateSecretAndCommit } from '../lib/crypto-utils';
 import { getDrawSecret, removeDrawSecret, getAllDrawSecrets, isLocalStorageAvailable, clearAllDrawSecrets, storeDrawSecret } from '../lib/secret-storage';
 import useStore from '../lib/store';
 import { formatTokenName } from '../lib/token-utils';
+import { truncateAddressMid, getFinishTxId, getTxUrl, findAndStoreTxForDraw } from '../lib/format-utils';
 
 const CONTRACT = 'con_xilottov1';
 
@@ -18,7 +20,7 @@ export default function MultiDrawDashboard() {
     const [notice, setNotice] = useState(null);
     const [err, setErr] = useState(null);
     const [selectedTab, setSelectedTab] = useState('active');
-    const [drawSecrets, setDrawSecrets] = useState(new Map()); // Store secrets for each draw
+    const [drawSecrets, setDrawSecrets] = useState(new Map());
     const [storageAvailable, setStorageAvailable] = useState(true);
 
     useEffect(() => {
@@ -106,8 +108,11 @@ export default function MultiDrawDashboard() {
                 reveal: secret
             });
             if (res && res.errors) throw new Error(res.errors);
+            if (res) {
+                const txid = res._txid || res.txid || res.txId || res.hash || res.txhash || res.txHash;
+                if (txid) storeFinishTxId(draw.id, txid);
+            }
 
-            // Remove the secret from storage after successful finish (only if it was stored)
             if (!manualSecret && storageAvailable) {
                 removeDrawSecret(draw.id);
             }
@@ -383,7 +388,7 @@ function DrawCard({ draw, onBuyTickets, onFinishDraw, busyDraw, currentUserAddre
 
                 <div className="draw-creator">
                     <span className="creator-label">Created by:</span>
-                    <code className="creator-address">{draw.creator}</code>
+                    <code className="creator-address">{truncateAddressMid(draw.creator)}</code>
                 </div>
 
                 <div className="draw-stats">
@@ -541,7 +546,7 @@ function DrawCard({ draw, onBuyTickets, onFinishDraw, busyDraw, currentUserAddre
                                     <div className="admin-list">
                                         {draw.admins.map(admin => (
                                             <div key={admin} className="admin-item">
-                                                <code>{admin}</code>
+                                                <code>{truncateAddressMid(admin)}</code>
                                             </div>
                                         ))}
                                     </div>
@@ -697,9 +702,29 @@ function CompletedDrawsTable({ draws, currentUserAddress }) {
                                 </td>
                                 <td className="winner-cell">
                                     {draw.winner ? (
-                                        <code className="winner-address">
-                                            {`${draw.winner.slice(0, 8)}...${draw.winner.slice(-6)}`}
-                                        </code>
+                                        <div className="winner-cell-content">
+                                            <code className="winner-address">{truncateAddressMid(draw.winner)}</code>
+                                            {(() => {
+                                                const txid = getFinishTxId(draw.id);
+                                                if (txid) {
+                                                    return (
+                                                        <a className="winner-tx-link" href={getTxUrl(txid)} target="_blank" rel="noreferrer">
+                                                            <span className="txhash-label">Tx</span>
+                                                            <code className="txhash-code">{truncateAddressMid(txid)}</code>
+                                                        </a>
+                                                    );
+                                                }
+                                                // Auto-query for tx if not found
+                                                (async () => {
+                                                    const foundTx = await findAndStoreTxForDraw(draw.id);
+                                                    if (foundTx) {
+                                                        // Force re-render by updating state
+                                                        window.location.reload();
+                                                    }
+                                                })();
+                                                return null;
+                                            })()}
+                                        </div>
                                     ) : (
                                         <span className="no-winner">N/A</span>
                                     )}

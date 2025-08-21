@@ -2468,3 +2468,44 @@ input[type=number] {
 .back-button:hover .back-icon {
   transform: translateX(-2px);
 }
+
+/* Winner tx hash chip */
+.winner-tx {
+  margin-top: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.winner-tx .txhash-label {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  color: #bae6fd;
+  font-weight: 700;
+  font-size: .75rem;
+  letter-spacing: .25px;
+}
+
+.winner-tx .txhash-code {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e5edff;
+}
+
+.winner-tx-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+}
+
+.winner-tx-link:hover .txhash-code {
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}

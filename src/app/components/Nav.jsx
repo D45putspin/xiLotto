@@ -1,13 +1,14 @@
 'use client'
 import React from 'react';
 import useStore from '../lib/store';
+import { truncateAddressMid } from '../lib/format-utils';
 
 const Nav = () => {
     const walletAddressElementValue = useStore(state => state.walletAddressElementValue);
 
     const formatWalletAddress = (address) => {
         if (!address || address === 'Not connected') return 'Not connected';
-        return `${address.slice(0, 6)}...${address.slice(-4)}`;
+        return truncateAddressMid(address);
     };
 
     return (

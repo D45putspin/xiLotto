@@ -1,5 +1,6 @@
 // store.js
 import { create } from 'zustand';
+import { truncateAddressMid } from './format-utils';
 
 const useStore = create((set, get) => ({
     walletAddressElementValue: "Not connected",
@@ -9,7 +10,7 @@ const useStore = create((set, get) => ({
     setWalletAddress: (address) => set({ 
         walletAddress: address,
         isWalletConnected: Boolean(address && address !== 'Not connected'),
-        walletAddressElementValue: address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Not connected"
+        walletAddressElementValue: address ? truncateAddressMid(address) : "Not connected"
     }),
     
     // Voting system state

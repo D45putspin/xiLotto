@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useDrawsQuery } from '../../fn/useDrawsQuery';
-import WalletUtilService from '../../lib/wallet-util-service';
+import WalletUtilService from '../../lib/wallet-util-service.mjs';
+import { storeFinishTxId, getFinishTxId, getTxUrl, truncateAddressMid, findAndStoreTxForDraw } from '../../lib/format-utils';
 import { formatTokenName } from '../../lib/token-utils';
 
 const CONTRACT = 'con_xilottov1';
@@ -12,10 +13,10 @@ export default function DrawPage() {
     const params = useParams();
     const drawId = parseInt(params.id as string);
     const { activeDraws, completedDraws, loading, error, refetch, currentUserAddress } = useDrawsQuery();
-    const [walletAddress, setWalletAddress] = useState(null);
-    const [busyDraw, setBusyDraw] = useState(null);
-    const [notice, setNotice] = useState(null);
-    const [err, setErr] = useState(null);
+    const [walletAddress, setWalletAddress] = useState<string | null>(null);
+    const [busyDraw, setBusyDraw] = useState<number | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
+    const [err, setErr] = useState<string | null>(null);
 
     // Find the specific draw
     const allDraws = [...activeDraws, ...completedDraws];
@@ -34,7 +35,7 @@ export default function DrawPage() {
         })();
     }, []);
 
-    const buyTicket = async (draw, ticketCount = 1) => {
+    const buyTicket = async (draw: any, ticketCount = 1) => {
         setErr(null);
         if (!walletAddress) { setErr('Please connect your wallet first'); return; }
         if (ticketCount < 1 || ticketCount > 100) { setErr('Ticket count must be between 1 and 100'); return; }
@@ -48,7 +49,7 @@ export default function DrawPage() {
                 try {
                     const approveRes = await utils.sendTransaction('currency', 'approve', { to: CONTRACT, amount: draw.price * ticketCount });
                     if (approveRes && approveRes.errors) console.warn('Approve failed:', approveRes.errors);
-                } catch (e) { console.warn('Approve threw:', e?.message || e); }
+                } catch (e: any) { console.warn('Approve threw:', e?.message || e); }
             }
 
             const before = await utils.getUserTicketsDraw(CONTRACT, draw.id, walletAddress);
@@ -66,14 +67,14 @@ export default function DrawPage() {
             setNotice(`✅ Bought ${ticketCount} ticket${ticketCount === 1 ? '' : 's'} for draw #${draw.id}. You now have ${nowCount}.`);
             setTimeout(() => setNotice(null), 6000);
             await refetch();
-        } catch (e) {
-            setErr(e.message || 'Transaction failed');
+        } catch (e: any) {
+            setErr(e?.message || 'Transaction failed');
         } finally {
             setBusyDraw(null);
         }
     };
 
-    const finishDraw = async (draw) => {
+    const finishDraw = async (draw: any) => {
         setErr(null);
         if (!draw.isAdmin) { setErr('Only admins can finish a draw'); return; }
         try {
@@ -82,10 +83,14 @@ export default function DrawPage() {
             if (!utils.initialized) utils.init();
             const res = await utils.sendTransaction(CONTRACT, 'finish_draw', { draw_id: draw.id });
             if (res && res.errors) throw new Error(res.errors);
+            if (res) {
+                const txid = (res as any)._txid || (res as any).txid || (res as any).txId || (res as any).hash || (res as any).txhash || (res as any).txHash;
+                if (txid) storeFinishTxId(draw.id, txid);
+            }
             await refetch();
             setTimeout(refetch, 2000);
-        } catch (e) {
-            setErr(e.message || 'Finish draw failed');
+        } catch (e: any) {
+            setErr(e?.message || 'Finish draw failed');
         } finally {
             setBusyDraw(null);
         }
@@ -108,7 +113,7 @@ export default function DrawPage() {
                 <div className="error-state">
                     <div className="error-icon">⚠️</div>
                     <h3>Error Loading Draw</h3>
-                    <p>{error.message}</p>
+                    <p>{(error as any)?.message}</p>
                 </div>
             </div>
         );
@@ -120,7 +125,7 @@ export default function DrawPage() {
                 <div className="not-found-state">
                     <div className="not-found-icon">🔍</div>
                     <h3>Draw Not Found</h3>
-                    <p>Draw #{drawId} doesn't exist or has been removed.</p>
+                    <p>Draw #{drawId} doesn&apos;t exist or has been removed.</p>
                     <a href="/" className="back-link">← Back to Dashboard</a>
                 </div>
             </div>
@@ -182,7 +187,7 @@ export default function DrawPage() {
                 <div className="notification notification-error">
                     <div className="notification-content">
                         <div className="notification-icon">⚠️</div>
-                        <span>{error?.message || err}</span>
+                        <span>{(error as any)?.message || err}</span>
                     </div>
                     <button onClick={() => { setErr(null); }} className="notification-close">×</button>
                 </div>
@@ -216,7 +221,7 @@ export default function DrawPage() {
                                     Creator
                                 </div>
                                 <div className="detail-value">
-                                    <code className="creator-address">{draw.creator}</code>
+                                    <code className="creator-address">{truncateAddressMid(draw.creator)}</code>
                                 </div>
                             </div>
 
@@ -310,9 +315,31 @@ export default function DrawPage() {
                                 <div className="winner-section">
                                     <div className="winner-badge">🏆 Winner!</div>
                                     <div className="winner-info">
-                                        <div className="winner-label">Winner Address:</div>
-                                        <code className="winner-address">{draw.winner}</code>
+                                        <div className="winner-label">Winner:</div>
+                                        <code className="winner-address">{truncateAddressMid(draw.winner)}</code>
                                     </div>
+                                    {(() => { 
+                                        const txid = getFinishTxId(draw.id); 
+                                        if (txid) {
+                                            return (
+                                                <div className="winner-tx">
+                                                    <span className="txhash-label">Tx</span>
+                                                    <a href={getTxUrl(txid)} target="_blank" rel="noreferrer">
+                                                        <code className="txhash-code">{truncateAddressMid(txid)}</code>
+                                                    </a>
+                                                </div>
+                                            );
+                                        }
+                                        // Auto-query for tx if not found
+                                        (async () => {
+                                            const foundTx = await findAndStoreTxForDraw(draw.id);
+                                            if (foundTx) {
+                                                // Force re-render by updating state
+                                                window.location.reload();
+                                            }
+                                        })();
+                                        return null;
+                                    })()}
                                 </div>
                             )}
                         </div>
